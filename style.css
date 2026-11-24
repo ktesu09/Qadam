@@ -256,6 +256,8 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .seg__btn + .seg__btn { border-left: 1px solid var(--ink); }
 .seg__btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .btn[disabled], .seg__btn[disabled] { opacity: .45; cursor: not-allowed; }
+/* Вид «для родителей»: технические разделы (оси, точки ± SD, кривые) скрыты */
+.is-parents .for-doctor { display: none; }
 .btn[disabled]:hover { background: inherit; }
 .btn--primary[disabled]:hover { background: var(--accent); }
 .later { color: var(--grey); font-size: .85rem; flex: 1 1 200px; }

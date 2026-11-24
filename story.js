@@ -85,12 +85,26 @@
           el('span', { class: 'side-mark__word', text: t(side) }))) : null);
   }
 
-  /* ——— 2. Панель отчёта: заглушки ——— */
-  function tools() {
+  /* ——— 2. Панель отчёта: «Для врача / Для родителей», печать ——— */
+  // Вид отчёта помним в браузере (только удобство; без localStorage просто «для врача»)
+  let audience = 'doctor';
+  try { if (localStorage.getItem('kadam-audience') === 'parents') audience = 'parents'; } catch (e) { /* приватный режим */ }
+
+  function setAudience(root, id, value) {
+    audience = value;
+    try { localStorage.setItem('kadam-audience', value); } catch (e) { /* ничего */ }
+    root.classList.toggle('is-parents', value === 'parents');
+    root.querySelectorAll('.seg__btn[data-aud]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.aud === value)));
+    const old = root.querySelector('#ai-block');
+    if (old) old.replaceWith(aiSlot(id));
+  }
+
+  function tools(root, id) {
+    const seg = (value, label) => el('button', { type: 'button', class: 'seg__btn', 'data-aud': value,
+      'aria-pressed': String(audience === value), onclick: () => setAudience(root, id, value), text: t(label) });
     return el('div', { class: 'p-tools' },
       el('div', { class: 'seg', role: 'group', 'aria-label': t('reportFor') },
-        el('button', { type: 'button', class: 'seg__btn', 'aria-pressed': 'true', disabled: true, text: t('forDoctor') }),
-        el('button', { type: 'button', class: 'seg__btn', 'aria-pressed': 'false', disabled: true, text: t('forParents') })),
+        seg('doctor', 'forDoctor'), seg('parents', 'forParents')),
       el('button', { type: 'button', class: 'btn btn--primary', onclick: () => window.print(), text: t('print') }),
       el('button', { type: 'button', class: 'btn', disabled: true, text: t('download') }),
       el('span', { class: 'later', text: t('later') }));
@@ -195,7 +209,8 @@
         el('p', { class: 'placeholder__text', text: t('aiEmpty') }));
     }
     const part = aiFor(id);
-    const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), modelLine(K.store.ai.model)));
+    const parents = audience === 'parents';
+    const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), parents ? null : modelLine(K.store.ai.model)));
     if (!part) {
       sec.append(el('p', { class: 'placeholder__text', text: t('aiNoParticipant') }));
       return sec;
@@ -204,20 +219,29 @@
     const main = el('div', { class: 'ai__main' });
     const side = el('div', { class: 'ai__side' });
 
-    // Текст для врача: на выбранном языке, иначе — на другом с пометкой
-    const want = K.getLang() === 'kz' ? 'summary_kz' : 'summary_ru';
-    const other = want === 'summary_kz' ? 'summary_ru' : 'summary_kz';
+    // Текст для врача или для родителей: на выбранном языке, иначе — на другом с пометкой
+    const base = parents ? 'parent_summary' : 'summary';
+    const want = `${base}_${K.getLang() === 'kz' ? 'kz' : 'ru'}`;
+    const other = want.endsWith('_kz') ? `${base}_ru` : `${base}_kz`;
     const text = typeof part[want] === 'string' && part[want].trim() ? part[want] : typeof part[other] === 'string' && part[other].trim() ? part[other] : null;
     if (text) {
       main.append(el('blockquote', { class: 'ai__summary' }, el('p', { text })));
-      if (text !== part[want]) main.append(el('p', { class: 'ai__lang', text: t(other === 'summary_ru' ? 'aiOnlyRu' : 'aiOnlyKz') }));
+      if (text !== part[want]) main.append(el('p', { class: 'ai__lang', text: t(other.endsWith('_ru') ? 'aiOnlyRu' : 'aiOnlyKz') }));
+    } else if (parents) {
+      main.append(el('p', { class: 'placeholder__text', text: t('aiNoParent') }));
     }
 
     const best = normCond(part.best_condition);
     if (best) {
       main.append(el('div', { class: 'ai__best' },
-        el('span', { class: 'ai__best-label', text: t('aiBest') }),
+        el('span', { class: 'ai__best-label', text: t(parents ? 'aiBestParent' : 'aiBest') }),
         el('span', { class: 'ai__best-val' }, el('span', { class: 'spread__roman', text: ROMAN[best], 'aria-hidden': 'true' }), ` ${t(`cond_${best}`)}`)));
+    }
+
+    if (parents) {
+      // Родителям — только простой текст и лучшее условие: без таблиц, p-value и номеров шагов
+      sec.append(main, el('p', { class: 'ai__note', text: t('aiNoteParent') }));
+      return sec;
     }
 
     const changes = Array.isArray(part.significant_changes) ? part.significant_changes.filter((c) => c && c.parameter && (isNum(c.change_pct) || isNum(c.change_abs))) : [];
@@ -472,16 +496,16 @@
   function render(root, id, onBack) {
     while (charts.length) { const c = charts.pop(); if (c.chart) c.chart.destroy(); }
     root.innerHTML = '';
+    root.classList.toggle('is-parents', audience === 'parents');
     const subject = K.subjects().find((s) => s.id === id);
     if (!subject) return;
     root.append(
       head(subject, onBack),
-      tools(),
+      tools(root, id),
       el('section', { class: 'block block--story' }, spreads(id)),
       aiSlot(id),
-      axes(),
-      dotPlots(id),
-      curves(id),
+      // технические разделы: в виде «для родителей» скрыты
+      ...[axes(), dotPlots(id), curves(id)].map((s) => { s.classList.add('for-doctor'); return s; }),
       printCard(subject));
     // графики создаём после вставки в документ, чтобы знать размеры
     for (const c of charts) c.chart = new Chart(c.canvas, c.config);
