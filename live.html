@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Qadam Live — углы по камере</title>
+  <meta name="description" content="Измерение углов бедра и колена по камере с помощью MediaPipe. Видео обрабатывается только в браузере и никуда не отправляется.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23C7D93B'/%3E%3Cpath d='M13 12c5 0 6 5 5 9-1 4-1 6-1.5 8-.6 2-4.4 2-5 0-.6-2-.5-4-1.5-8-1-4 0-9 3-9z' fill='%2314213A'/%3E%3Ccircle cx='10.5' cy='7.5' r='2.4' fill='%2314213A'/%3E%3Ccircle cx='15' cy='6' r='1.9' fill='%2314213A'/%3E%3Ccircle cx='18.6' cy='7.4' r='1.5' fill='%2314213A'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-live">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="foot" viewBox="0 0 32 60">
+      <path d="M15.5 21c7 0 9.5 7 8.3 14.5-1 6.3-1.6 11-2.6 16-1.2 5.6-9.4 5.6-10.6 0-1-5-1.4-9.6-2.6-15.5C6.4 28.4 8.6 21 15.5 21z"/>
+      <ellipse cx="10.6" cy="13.6" rx="3.9" ry="4.6"/>
+      <circle cx="16.8" cy="11.4" r="2.9"/>
+      <circle cx="21.4" cy="12.9" r="2.4"/>
+      <circle cx="24.9" cy="16" r="2"/>
+      <circle cx="27.1" cy="20" r="1.7"/>
+    </symbol>
+  </svg>
+
+  <header class="masthead">
+    <div class="masthead__inner wrap">
+      <a class="brand" href="index.html" aria-label="Qadam — на главную">
+        <svg class="brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="8" fill="var(--accent)"/>
+          <use href="#foot" x="18" y="8" width="26" height="48" fill="var(--ink)"/>
+        </svg>
+        <span class="brand__name">Qadam</span>
+      </a>
+      <div class="masthead__text">
+        <p class="masthead__tagline" data-i18n="liveTagline"></p>
+        <p class="masthead__sub" data-i18n="liveSub"></p>
+      </div>
+      <div class="lang" role="group" aria-label="Язык / Тіл">
+        <button type="button" class="lang__btn" data-lang="kz" aria-pressed="false">Қаз</button>
+        <button type="button" class="lang__btn" data-lang="ru" aria-pressed="true">Рус</button>
+      </div>
+    </div>
+    <nav class="topnav wrap" aria-label="Разделы">
+      <a href="index.html" class="topnav__link" data-i18n="navStory"></a>
+      <a href="live.html" class="topnav__link" aria-current="page" data-i18n="navLive"></a>
+    </nav>
+    <div class="trail" id="trail" aria-hidden="true"></div>
+  </header>
+
+  <p class="disclaimer wrap" role="note"><span data-i18n="disclaimer"></span></p>
+
+  <main class="wrap live">
+    <header class="live__head">
+      <div>
+        <span class="sec-no">Live</span>
+        <h1 class="live__title">Qadam Live</h1>
+        <p class="live__lead" data-i18n="liveLead"></p>
+      </div>
+      <p class="live__privacy"><strong data-i18n="livePrivacyLead"></strong> <span data-i18n="livePrivacy"></span></p>
+    </header>
+
+    <!-- Источник видео -->
+    <div class="live__bar">
+      <button type="button" class="btn btn--primary" id="cam" data-i18n="camOn"></button>
+      <label class="btn">
+        <input id="file" type="file" accept="video/*" hidden>
+        <span data-i18n="openVideo"></span>
+      </label>
+      <div class="live__leg">
+        <span class="live__label" data-i18n="legForAngles"></span>
+        <div class="seg" role="group" id="side">
+          <button type="button" class="seg__btn" data-side="LEFT" aria-pressed="true" data-i18n="LEFT"></button>
+          <button type="button" class="seg__btn" data-side="RIGHT" aria-pressed="false" data-i18n="RIGHT"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Что рисовать -->
+    <fieldset class="live__opts">
+      <legend class="live__label" data-i18n="showLegend"></legend>
+      <label class="chk"><input type="checkbox" id="oPose" checked><span data-i18n="oPose"></span></label>
+      <label class="chk"><input type="checkbox" id="oHand" checked><span data-i18n="oHand"></span></label>
+      <label class="chk"><input type="checkbox" id="oFace" checked><span data-i18n="oFace"></span></label>
+      <label class="chk"><input type="checkbox" id="oBlack"><span data-i18n="oBlack"></span></label>
+      <label class="chk"><input type="checkbox" id="oMirror" checked><span data-i18n="oMirror"></span></label>
+    </fieldset>
+
+    <div class="live__grid">
+      <div id="stage" class="stage mirror">
+        <video id="v" playsinline muted></video>
+        <canvas id="c"></canvas>
+        <div id="msg" class="stage__msg"></div>
+      </div>
+
+      <dl class="live__stats">
+        <div class="lstat"><dt data-i18n="statHip"></dt><dd id="aHip">—</dd></div>
+        <div class="lstat"><dt data-i18n="statKnee"></dt><dd id="aKnee">—</dd></div>
+        <div class="lstat lstat--small"><dt data-i18n="statFps"></dt><dd id="fps">—</dd></div>
+      </dl>
+    </div>
+
+    <p id="warn" class="live__warn" role="status" aria-live="polite"></p>
+    <p class="live__note" data-i18n="liveNote"></p>
+  </main>
+
+  <footer class="colophon wrap">
+    <p><strong data-i18n="disclaimer"></strong></p>
+    <p data-i18n="livePrivacy"></p>
+    <p class="colophon__src" data-i18n="liveCredit"></p>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script type="module" src="live.js"></script>
+</body>
+</html>
