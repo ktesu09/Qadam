@@ -126,7 +126,7 @@
     $('#drop-title').dataset.i18n = 'dropTitle';
     K.applyI18n($('#drop'));
     $('#drop-title').textContent = n ? t('loadedCount').replace('{n}', n) : t('dropTitle');
-    if (n && K.store.ai) $('#drop-title').append(el('span', { class: 'drop__ai', text: ` + ${t('aiLoadedShort')}` }));
+    if (n && K.store.ai) $('#drop-title').append(el('span', { class: 'drop__ai', text: ` + ${t('aiLoadedShort')}${K.store.ai.demo === true ? ` (${t('aiDemo')})` : ''}` }));
     $('#drop .btn span').textContent = n ? t('addMore') : t('choose');
 
     const ul = $('#messages');
@@ -239,7 +239,7 @@
             state.messages.push({ ok: false, name: file.name, error: 'noParticipants' });
           } else {
             K.store.ai = ai;
-            if (!fromMemory) { state.messages.push({ ok: true, key: 'aiLoaded' }); await saved.put('ai', file.name, text); }
+            if (!fromMemory) { state.messages.push({ ok: true, key: ai.demo === true ? 'aiLoadedDemo' : 'aiLoaded' }); await saved.put('ai', file.name, text); }
           }
         } catch (e) {
           state.messages.push({ ok: false, name: file.name, error: 'badJson' });

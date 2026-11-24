@@ -1,6 +1,8 @@
 {
+  "demo": true,
+  "demo_note": "ДЕМО-ПРИМЕР: не настоящие данные. Модель и p-value выдуманы, файл только показывает формат.",
   "model": {
-    "name": "ПРИМЕР (mock) — не настоящая модель",
+    "name": "ДЕМО-ПРИМЕР — не настоящая модель",
     "metric": "accuracy",
     "value": 0.82,
     "validation": "GroupKFold по subject"

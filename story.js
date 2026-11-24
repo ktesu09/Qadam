@@ -127,7 +127,9 @@
       // метки из заключения ИИ — в контейнере одинаковой высоты, чтобы цифры в разворотах стояли ровно
       const aiPart = aiFor(id);
       const flags = el('div', { class: `spread__flags${aiPart ? ' has-ai' : ''}` });
-      if (aiPart && normCond(aiPart.best_condition) === cond) flags.append(el('p', { class: 'spread__ai', text: t('aiBestMark') }));
+      if (aiPart && normCond(aiPart.best_condition) === cond) {
+        flags.append(el('p', { class: 'spread__ai', text: t(aiPart.best_improves_baseline === false ? 'aiBestMarkSoft' : 'aiBestMark') }));
+      }
       if (aiPart && Array.isArray(aiPart.unstable_cycles)) {
         const k = aiPart.unstable_cycles.filter((u) => u && normCond(u.condition) === cond).length;
         if (k) flags.append(el('p', { class: 'spread__unstable', text: `${t('aiUnstableShort')}: ${k}` }));
@@ -254,15 +256,39 @@
     return parts.length ? parts.join(' · ') : null;
   }
 
+  // Общие метрики модели из ai/analyze.py (Leave-One-Subject-Out по 29 детям).
+  // Данных отдельных детей здесь нет — поэтому карточка видна всегда, даже без ai_results.json.
+  const MODEL_CARD = { accuracy: 0.556, f1: 0.551, chance: 0.333, permutation_p: 0.0099, cycles: 2606 };
+
+  function modelCard() {
+    const m = MODEL_CARD;
+    const num = (label, v) => el('div', { class: 'mcard__num' }, el('dt', { text: label }), el('dd', { text: fmt(v, 2) }));
+    const p = m.permutation_p < 0.001 ? 'p < 0,001' : `p = ${fmt(m.permutation_p, 3)}`;
+    return el('div', { class: 'mcard' },
+      el('h3', { text: t('mcTitle') }),
+      el('p', { text: t('mcMethod') }),
+      el('p', { text: t('mcValidation').replace('{c}', new Intl.NumberFormat('ru-RU').format(m.cycles)) }),
+      el('dl', { class: 'mcard__nums' }, num(t('mcAcc'), m.accuracy), num(t('mcF1'), m.f1), num(t('mcChance'), m.chance)),
+      el('p', { class: 'mcard__note', text: t('mcNote').replace('{p}', p) }));
+  }
+
+  // Демо-файл (mock_ai.json, "demo": true) — крупная пометка, чтобы выдуманные числа не приняли за настоящие
+  const isDemo = () => !!(K.store.ai && K.store.ai.demo === true);
+  function demoBanner() {
+    return el('div', { class: 'ai__demo', role: 'note' }, el('b', { text: t('aiDemo') }), el('span', { text: t('aiDemoText') }));
+  }
+
   function aiSlot(id) {
     if (!K.store.ai) {
-      return el('section', { class: 'block placeholder', id: 'ai-block' },
-        secHead('04', t('aiTitle'), null),
-        el('p', { class: 'placeholder__text', text: t('aiEmpty') }));
+      const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), null));
+      if (audience !== 'parents') sec.append(modelCard());
+      sec.append(el('p', { class: 'placeholder__text ai__hint', text: t('aiEmpty') }));
+      return sec;
     }
     const part = aiFor(id);
     const parents = audience === 'parents';
     const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), parents ? null : modelLine(K.store.ai.model)));
+    if (isDemo()) sec.append(demoBanner());
     if (!part) {
       sec.append(el('p', { class: 'placeholder__text', text: t('aiNoParticipant') }));
       return sec;
@@ -287,7 +313,8 @@
     if (best) {
       main.append(el('div', { class: 'ai__best' },
         el('span', { class: 'ai__best-label', text: t(parents ? 'aiBestParent' : 'aiBest') }),
-        el('span', { class: 'ai__best-val' }, el('span', { class: 'spread__roman', text: ROMAN[best], 'aria-hidden': 'true' }), ` ${t(`cond_${best}`)}`)));
+        el('span', { class: 'ai__best-val' }, el('span', { class: 'spread__roman', text: ROMAN[best], 'aria-hidden': 'true' }), ` ${t(`cond_${best}`)}`),
+        part.best_improves_baseline === false ? el('p', { class: 'ai__best-note', text: t('aiNotImproves') }) : null));
     }
 
     if (parents) {
@@ -487,8 +514,10 @@
       if (text || best) {
         ai = el('section', { class: 'pc-sec pc-ai' },
           el('h3', { text: t('aiTitle') }),
+          isDemo() ? el('p', { class: 'pc-demo' }, el('b', { text: t('aiDemo') }), ` ${t('aiDemoText')}`) : null,
           text ? el('p', { class: 'pc-ai__text', text: String(text) }) : null,
           best ? el('p', {}, el('b', { text: `${t('aiBest')}: ` }), `${ROMAN[best]}. ${t(`cond_${best}`)}`) : null,
+          best && part.best_improves_baseline === false ? el('p', { class: 'pc-muted', text: t('aiNotImproves') }) : null,
           modelLine(K.store.ai.model) ? el('p', { class: 'pc-muted', text: modelLine(K.store.ai.model) }) : null,
           el('p', { class: 'pc-muted', text: t('aiNote') }));
       }
@@ -537,10 +566,28 @@
     box.innerHTML = '';
     for (const c of charts) {
       if (!c.chart) continue;
+      // В виде «для родителей» графики на экране скрыты (размер 0×0) — тогда рисуем копию на невидимом холсте
+      const src = c.chart.width > 0 && c.chart.height > 0 ? c.chart.toBase64Image('image/png', 1) : offscreenImage(c.config);
       box.append(el('figure', {},
         el('figcaption', { text: t(`s_${c.sig}`) }),
-        el('img', { src: c.chart.toBase64Image('image/png', 1), alt: t(`s_${c.sig}`) })));
+        el('img', { src, alt: t(`s_${c.sig}`) })));
     }
+  }
+
+  function offscreenImage(config) {
+    const canvas = el('canvas', { width: 680, height: 400 });
+    const holder = el('div', { style: 'position:fixed;left:-10000px;top:0;width:680px;height:400px', 'aria-hidden': 'true' }, canvas);
+    document.body.append(holder);
+    const copy = {
+      ...config,
+      data: { labels: config.data.labels, datasets: config.data.datasets.map((d) => ({ ...d, data: d.data.map((p) => ({ ...p })) })) },
+      options: { ...config.options, responsive: false, devicePixelRatio: 1 },
+    };
+    const chart = new Chart(canvas, copy);
+    const src = chart.toBase64Image('image/png', 1);
+    chart.destroy();
+    holder.remove();
+    return src;
   }
   window.addEventListener('beforeprint', fillPrintCurves);
 

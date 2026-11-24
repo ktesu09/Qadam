@@ -405,6 +405,18 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .ai__list b { display: block; font-weight: 700; }
 .ai__list span { color: var(--grey); font-size: .92rem; }
 .ai__note { color: var(--grey); font-size: .85rem; margin: var(--s3) 0 0; }
+.ai__best-note { flex-basis: 100%; margin: 0; color: var(--grey); max-width: 60ch; }
+.ai__hint { margin-top: var(--s3); }
+.ai__demo { margin: 0 0 var(--s3); padding: var(--s2) var(--s3); border-left: 6px solid var(--worse); background: var(--paper-tint); }
+.ai__demo b { display: block; color: var(--worse); font-size: 1.5rem; font-weight: 800; line-height: 1.2; }
+.ai__demo span { display: block; margin-top: var(--s1); max-width: 60ch; }
+/* Карточка модели: общие метрики, без данных детей */
+.mcard h3 { font-size: 1.05rem; margin: 0 0 var(--s1); padding-bottom: var(--s1); border-bottom: 1px solid var(--ink); }
+.mcard p { margin: 0 0 var(--s2); max-width: 64ch; }
+.mcard__nums { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); margin: var(--s3) 0; }
+.mcard__num dt { color: var(--grey); font-size: .9rem; }
+.mcard__num dd { margin: 0; font-size: 2.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mcard__note { color: var(--grey); font-size: .9rem; }
 .spread__ai { margin: var(--s1) 0 0; font-weight: 600; font-size: .9rem; }
 .spread__ai::before { content: ""; display: inline-block; width: 12px; height: 12px; background: var(--accent); border-radius: 2px; margin-right: var(--s1); vertical-align: -1px; }
 .spread__unstable { margin: 4px 0 0; color: var(--grey); font-size: .85rem; }
@@ -455,6 +467,8 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
   .pc-curves figcaption { font-size: 8.5pt; font-weight: 700; margin-bottom: 2pt; }
   .pc-curves img { width: 100%; height: auto; display: block; }
 
+  .pc-demo { font-size: 10pt; margin: 0 0 4pt; padding: 4pt 8pt; border: 1.5pt solid var(--worse); }
+  .pc-demo b { color: var(--worse); }
   .pc-ai__text { font-size: 10pt; margin: 0 0 4pt; padding-left: 8pt; border-left: 3pt solid var(--accent); }
   .pc-icf__item { display: grid; grid-template-columns: 1fr; padding: 4pt 0; border-bottom: .6pt solid var(--rule); }
   .pc-icf__code { margin: 0; font-weight: 700; }
