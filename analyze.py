@@ -346,29 +346,49 @@ def doctor_text(lang, changes, best, improves, scores, unst_counts, n_cycles):
     cnt = " / ".join(str(unst_counts[c]) for c in CONDITIONS)
     comp = [c for c in FEEDBACK if scores[c]["compensation"]]
     o = OTHER[best]
+
+    def example(c):
+        """Пример улучшения для условия c: GPS, если он значимо снизился, иначе самый сильный значимый сустав."""
+        good = [r for r in changes if r["condition"] == c and r["significant"] and r["direction"] == "better"
+                and r["change_pct"] is not None]
+        if not good:
+            return None
+        gps = [r for r in good if r["parameter"] == "GPS_a"]
+        r = gps[0] if gps else max(good, key=lambda r: abs(r["change_pct"]))
+        arrow = "↓" if r["change_pct"] < 0 else "↑"
+        return f"{NAME[lang][r['parameter']]} {arrow} {fmt(abs(r['change_pct']), 1)} %"
+
+    if comp:
+        where = (" и " if lang == "ru" else " және ").join(COND_IN[lang][c] for c in comp)
+        where = where[0].upper() + where[1:]
+        ex = []
+        for c in comp:
+            e = example(c)
+            if e:
+                ex.append(f"{e} {COND_IN[lang][c]}" if len(comp) > 1 else e)
+        nums = (" и " if lang == "ru" else " және ").join(str(scores[c]["stability_score"]) for c in comp)
     if lang == "ru":
         if improves:
             s3 = f"Больше значимых улучшений без потери стабильности — {COND_IN['ru'][best]}."
+        elif comp:
+            exs = f" (например, {', '.join(ex)})" if ex else ""
+            s3 = (f"{best} переносится лучше, чем {o}. {where} походка стала ближе к норме{exs}, но шаги стали "
+                  f"менее стабильными (стабильность {nums} из 100) — возможная компенсация, нужен повторный замер.")
         else:
             s3 = (f"{best} переносится лучше, чем {o}, но за одну сессию ни одно условие не улучшило походку — "
                   f"нужен повторный замер.")
-            if comp:
-                where = " и ".join(COND_IN["ru"][c] for c in comp)
-                nums = " и ".join(str(scores[c]["stability_score"]) for c in comp)
-                s3 += (f" {where[0].upper() + where[1:]} улучшений больше, чем ухудшений, но шаги стали менее "
-                       f"стабильными (стабильность {nums} из 100) — возможная компенсация.")
         s4 = f"Нестабильных шагов {cnt} (обычная / словесная / VR)."
     else:
         if improves:
             s3 = f"Тұрақтылықты жоғалтпай ең көп маңызды жақсару — {COND_IN['kz'][best]}."
+        elif comp:
+            exs = f" (мысалы, {', '.join(ex)})" if ex else ""
+            s3 = (f"{KZ_ACC[best]} бала {KZ_DAT[o]} қарағанда жақсырақ көтереді. {where} жүріс нормаға "
+                  f"жақындады{exs}, бірақ қадамдар тұрақсыздау болды (тұрақтылық {nums} / 100) — ықтимал "
+                  f"компенсация, қайта өлшеу керек.")
         else:
             s3 = (f"{KZ_ACC[best]} бала {KZ_DAT[o]} қарағанда жақсырақ көтереді, бірақ бір сессияда ешбір жағдай "
                   f"жүрісті жақсартпады — қайта өлшеу керек.")
-            if comp:
-                where = " және ".join(COND_IN["kz"][c] for c in comp)
-                nums = " және ".join(str(scores[c]["stability_score"]) for c in comp)
-                s3 += (f" {where[0].upper() + where[1:]} жақсарулар нашарлаудан көп, бірақ қадамдар тұрақсыздау "
-                       f"болды (тұрақтылық {nums} / 100) — ықтимал компенсация.")
         s4 = f"Тұрақсыз қадамдар {cnt} (қалыпты / ауызша / VR)."
     return " ".join([s1, s2, s3, s4])
 
@@ -391,17 +411,24 @@ def parent_text(lang, best, improves, scores, unst_counts, n_cycles):
     else:
         # Ни одна подсказка не улучшила походку за одно занятие: говорим, какая из двух далась легче
         if lang == "ru":
-            s.append(f"Из двух подсказок ребёнку легче далась {PARENT_ONE['ru'][best]}, "
-                     f"но за одно занятие походка не стала лучше обычной. Нужен повторный замер.")
             if comp:
+                # походка ближе к норме, но шаги неровные — не пишем «не стала лучше», это противоречило бы цифрам
                 who = f"Когда ребёнок шёл {PARENT_WITH['ru'][comp[0]]}," if len(comp) == 1 else "С подсказками"
-                s.append(f"{who} некоторые движения стали лучше, но шаги стали менее ровными.")
+                s.append(f"Из двух подсказок ребёнку легче далась {PARENT_ONE['ru'][best]}.")
+                s.append(f"{who} походка стала ближе к норме, но шаги стали менее ровными. "
+                         f"Нужен повторный замер.")
+            else:
+                s.append(f"Из двух подсказок ребёнку легче далась {PARENT_ONE['ru'][best]}, "
+                         f"но за одно занятие походка не стала лучше обычной. Нужен повторный замер.")
         else:
-            s.append(f"Екі нұсқаудың ішінде балаға {PARENT_ONE['kz'][best]} оңайырақ болды, "
-                     f"бірақ бір сабақта жүріс әдеттегіден жақсы болмады. Қайта өлшеу керек.")
             if comp:
                 who = f"Бала {PARENT_WITH['kz'][comp[0]]} жүргенде," if len(comp) == 1 else "Нұсқаулармен"
-                s.append(f"{who} кейбір қозғалыстар жақсарды, бірақ қадамдар біркелкілігін жоғалтты.")
+                s.append(f"Екі нұсқаудың ішінде балаға {PARENT_ONE['kz'][best]} оңайырақ болды.")
+                s.append(f"{who} жүріс нормаға жақындады, бірақ қадамдар біркелкілігін жоғалтты. "
+                         f"Қайта өлшеу керек.")
+            else:
+                s.append(f"Екі нұсқаудың ішінде балаға {PARENT_ONE['kz'][best]} оңайырақ болды, "
+                         f"бірақ бір сабақта жүріс әдеттегіден жақсы болмады. Қайта өлшеу керек.")
     total = sum(unst_counts.values()) / max(1, sum(n_cycles.values()))
     if comp and not improves:
         # про неровные шаги уже сказано выше — не противоречим себе

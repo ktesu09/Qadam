@@ -106,8 +106,49 @@
       el('div', { class: 'seg', role: 'group', 'aria-label': t('reportFor') },
         seg('doctor', 'forDoctor'), seg('parents', 'forParents')),
       el('button', { type: 'button', class: 'btn btn--primary', onclick: () => window.print(), text: t('print') }),
-      el('button', { type: 'button', class: 'btn', disabled: true, text: t('download') }),
-      el('span', { class: 'later', text: t('later') }));
+      el('button', { type: 'button', class: 'btn', onclick: () => downloadCsv(id), text: t('download') }));
+  }
+
+  /* Таблица параметров ребёнка в CSV: «;», десятичная запятая, UTF-8 с BOM — Excel откроет кириллицу и казахские буквы */
+  function downloadCsv(id) {
+    const num = (v) => (v === null || v === undefined || !Number.isFinite(v) ? '' : v.toFixed(2).replace('.', ','));
+    const q = (s) => (/[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+    const unit = (p) => (p.unit === '%GC' ? t('unitGc') : '°');
+    const chg = (p, base, value) => {
+      const ch = K.change(p, base, value);
+      if (!ch) return '';
+      if (p.unit) return `${signed(ch.delta)}${p.unit === '%GC' ? ` ${t('unitGc')}` : '°'}`;
+      return ch.pct === null ? '' : `${signed(ch.pct)} %`;
+    };
+    const fb = CONDITIONS.filter((c) => c !== 'Baseline');
+    const rows = [[t('cardParam'), t('csvUnit'), ...CONDITIONS, ...fb.map((c) => `${c}: ${t('csvChange')}`)]];
+    rows.push([t('cardCycles'), '', ...CONDITIONS.map((c) => {
+      const r = K.store.discrete[c] && K.store.discrete[c].get(id);
+      return r ? String(r.length) : '';
+    }), ...fb.map(() => '')]);
+    for (const p of PARAMS) {
+      const s = Object.fromEntries(CONDITIONS.map((c) => {
+        const ps = K.paramStats(id, c, p.key);
+        return [c, ps && ps.n ? ps.mean : null];
+      }));
+      rows.push([t(`p_${p.key}`), unit(p), ...CONDITIONS.map((c) => num(s[c])), ...fb.map((c) => chg(p, s.Baseline, s[c]))]);
+    }
+    rows.push([], [t('csvNote')], [t('disclaimer')]);
+    const text = '﻿' + rows.map((r) => r.map((x) => q(String(x))).join(';')).join('\r\n') + '\r\n';
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    const a = el('a', { href: url, download: `qadam_${id}.csv` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  /* Лучшая подсказка не улучшила походку «без потери стабильности». Если при ней эффективность > 50, а стабильность < 50 —
+     походка всё же ближе к норме (возможная компенсация), и писать «не улучшила» было бы неправдой. */
+  function notImprovesKey(part, best) {
+    const e = part.efficiency_score && part.efficiency_score[best];
+    const s = part.stability_score && part.stability_score[best];
+    return Number.isFinite(e) && Number.isFinite(s) && e > 50 && s < 50 ? 'aiNotImprovesComp' : 'aiNotImproves';
   }
 
   /* ——— 3. История шага: три разворота ——— */
@@ -324,7 +365,7 @@
       main.append(el('div', { class: 'ai__best' },
         el('span', { class: 'ai__best-label', text: t(parents ? 'aiBestParent' : 'aiBest') }),
         el('span', { class: 'ai__best-val' }, el('span', { class: 'spread__roman', text: ROMAN[best], 'aria-hidden': 'true' }), ` ${t(`cond_${best}`)}`),
-        part.best_improves_baseline === false ? el('p', { class: 'ai__best-note', text: t('aiNotImproves') }) : null));
+        part.best_improves_baseline === false ? el('p', { class: 'ai__best-note', text: t(notImprovesKey(part, best)) }) : null));
     }
 
     if (parents) {
@@ -546,7 +587,7 @@
           isDemo() ? el('p', { class: 'pc-demo' }, el('b', { text: t('aiDemo') }), ` ${t('aiDemoText')}`) : null,
           text ? el('p', { class: 'pc-ai__text', text: String(text) }) : null,
           best ? el('p', {}, el('b', { text: `${t('aiBest')}: ` }), `${ROMAN[best]}. ${t(`cond_${best}`)}`) : null,
-          best && part.best_improves_baseline === false ? el('p', { class: 'pc-muted', text: t('aiNotImproves') }) : null,
+          best && part.best_improves_baseline === false ? el('p', { class: 'pc-muted', text: t(notImprovesKey(part, best)) }) : null,
           modelLine(K.store.ai.model) ? el('p', { class: 'pc-muted', text: modelLine(K.store.ai.model) }) : null,
           el('p', { class: 'pc-muted', text: t('aiNote') }));
       }

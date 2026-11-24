@@ -264,7 +264,6 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .is-parents .for-doctor { display: none; }
 .btn[disabled]:hover { background: inherit; }
 .btn--primary[disabled]:hover { background: var(--accent); }
-.later { color: var(--grey); font-size: .85rem; flex: 1 1 200px; }
 
 /* Разделы */
 .block { margin-top: var(--s5); }
