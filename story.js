@@ -179,9 +179,12 @@
   function modelLine(m) {
     if (!m || typeof m !== 'object') return null;
     const parts = [];
-    if (m.name) parts.push(`${t('aiModel')}: ${m.name}`);
+    const kz = K.getLang() === 'kz';
+    const name = (kz && m.name_kz) || m.name;
+    const validation = (kz && m.validation_kz) || m.validation;
+    if (name) parts.push(`${t('aiModel')}: ${name}`);
     if (m.metric && isNum(m.value)) parts.push(`${m.metric} ${fmt(m.value, 2)}`);
-    if (m.validation) parts.push(`${t('aiValidation')}: ${m.validation}`);
+    if (validation) parts.push(`${t('aiValidation')}: ${validation}`);
     return parts.length ? parts.join(' · ') : null;
   }
 
@@ -217,17 +220,20 @@
         el('span', { class: 'ai__best-val' }, el('span', { class: 'spread__roman', text: ROMAN[best], 'aria-hidden': 'true' }), ` ${t(`cond_${best}`)}`)));
     }
 
-    const changes = Array.isArray(part.significant_changes) ? part.significant_changes.filter((c) => c && c.parameter && isNum(c.change_pct)) : [];
+    const changes = Array.isArray(part.significant_changes) ? part.significant_changes.filter((c) => c && c.parameter && (isNum(c.change_pct) || isNum(c.change_abs))) : [];
     if (changes.length) {
       const tbody = el('tbody');
       for (const c of changes) {
         const p = PARAMS.find((x) => x.key === c.parameter);
         let verdict = 'neutral';
-        if (p && p.better === 'lower' && Math.abs(c.change_pct) >= 1) verdict = c.change_pct < 0 ? 'better' : 'worse';
+        if (p && p.better === 'lower' && isNum(c.change_pct) && Math.abs(c.change_pct) >= 1) verdict = c.change_pct < 0 ? 'better' : 'worse';
+        // Для углов и времени (aMinSagH, pctmZeroStSagH) % у нуля взрывается → показываем Δ в единицах
+        const val = isNum(c.change_pct) ? c.change_pct : c.change_abs;
+        const unit = isNum(c.change_pct) ? ' %' : p ? unitOf(p) : '';
         const pv = isNum(c.p_value) ? (c.p_value < 0.001 ? 'p < 0,001' : `p = ${fmt(c.p_value, 3)}`) : '';
         tbody.append(el('tr', {},
           el('th', { scope: 'row' }, paramName(c.parameter), el('small', { text: c.condition ? normCond(c.condition) || String(c.condition) : '' })),
-          el('td', { class: `chg chg--${verdict}` }, el('b', { text: `${c.change_pct < 0 ? '↓' : '↑'} ${fmt(Math.abs(c.change_pct))} %` })),
+          el('td', { class: `chg chg--${verdict}` }, el('b', { text: `${val < 0 ? '↓' : '↑'} ${fmt(Math.abs(val))}${unit}` })),
           el('td', { class: 'ai__p', text: pv })));
       }
       side.append(el('div', { class: 'ai__part' },
@@ -241,7 +247,7 @@
         el('h3', { text: t('aiUnstable') }),
         el('ul', { class: 'ai__list' }, unstable.map((u) => el('li', {},
           el('b', { text: `${u.condition ? normCond(u.condition) || u.condition : ''}${u.cycle !== undefined ? ` · ${t('aiCycle')} ${u.cycle}` : ''}` }),
-          u.reason ? el('span', { text: String(u.reason) }) : null)))));
+          (K.getLang() === 'kz' && u.reason_kz) || u.reason ? el('span', { text: String((K.getLang() === 'kz' && u.reason_kz) || u.reason) }) : null)))));
     }
 
     if (!main.childElementCount && !side.childElementCount) {
