@@ -379,8 +379,18 @@
       let lo = Math.min(...st.map((x) => x.s.mean - x.s.sd));
       let hi = Math.max(...st.map((x) => x.s.mean + x.s.sd));
       const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
-      const W = 600, H = 96, L = 8, R = 8;
+      // На узком экране: viewBox по ширине экрана (иначе SVG сжимается и подписи ~9px),
+      // а подписи ставим над своей линией по центру точки — сбоку они не помещаются
+      const narrow = window.innerWidth < 700;
+      const W = narrow ? Math.max(320, window.innerWidth - 32) : 600, L = 8, R = 8;
       const x = (v) => L + ((v - lo) / (hi - lo)) * (W - L - R);
+      const labW = (q) => `${q.c} ${fmt(q.s.mean)}`.length * 8.5;   // ширина подписи ~8,5px на знак
+      const fitsRight = (q) => x(q.s.mean + q.s.sd) + 8 + labW(q) <= W - R;
+      const fitsLeft = (q) => x(q.s.mean - q.s.sd) - 8 - labW(q) >= L;
+      // подписи над линиями: на телефоне всегда, на компьютере — если сбоку хоть одна не помещается
+      const above = narrow || st.some((q) => !fitsRight(q) && !fitsLeft(q));
+      const GAP = above ? 38 : 22, TOP = above ? 32 : 16;
+      const H = above ? TOP + GAP * 2 + 34 : 96;
       const g = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'dots__svg', role: 'img',
         'aria-label': `${t(`p_${p.key}`)}: ${st.map((q) => `${q.c} ${fmt(q.s.mean)}`).join(', ')}` });
       g.append(svg('line', { x1: L, x2: W - R, y1: H - 18, y2: H - 18, class: 'dots__axis' }));
@@ -389,14 +399,23 @@
         const tx = svg('text', { x: px, y: H - 2, 'text-anchor': anchor, class: 'dots__tick' }); tx.textContent = fmt(v); g.append(tx);
       });
       st.forEach((q, i) => {
-        const y = 16 + i * 22;
+        const y = TOP + i * GAP;
         const ser = SERIES[q.c];
         g.append(svg('line', { x1: x(q.s.mean - q.s.sd), x2: x(q.s.mean + q.s.sd), y1: y, y2: y, stroke: ser.color, 'stroke-width': 2, 'stroke-dasharray': ser.dash.join(' ') }));
         g.append(svg('circle', { cx: x(q.s.mean), cy: y, r: 6.5, fill: q.c === 'VR' ? '#C7D93B' : ser.color, stroke: '#14213A', 'stroke-width': q.c === 'VR' ? 1.5 : 0 }));
+        const text = `${q.c} ${fmt(q.s.mean)}`;
         const lab = svg('text', { x: x(q.s.mean + q.s.sd) + 8, y: y + 5, class: 'dots__lab' });
-        lab.textContent = `${q.c} ${fmt(q.s.mean)}`;
-        // если подпись не влезает справа — ставим слева
-        if (x(q.s.mean + q.s.sd) > W - 130) { lab.setAttribute('x', x(q.s.mean - q.s.sd) - 8); lab.setAttribute('text-anchor', 'end'); }
+        lab.textContent = text;
+        if (above) {
+          // над линией, по центру точки, но не за краями
+          const half = labW(q) / 2;
+          lab.setAttribute('x', Math.min(W - R - half, Math.max(L + half, x(q.s.mean))));
+          lab.setAttribute('y', y - 12);
+          lab.setAttribute('text-anchor', 'middle');
+        } else if (!fitsRight(q)) {
+          // не влезает справа — ставим слева
+          lab.setAttribute('x', x(q.s.mean - q.s.sd) - 8); lab.setAttribute('text-anchor', 'end');
+        }
         g.append(lab);
       });
       row.append(g);

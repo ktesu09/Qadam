@@ -105,6 +105,10 @@
     aiModel: 'Модель', aiValidation: 'проверка', aiNoParticipant: 'В файле ai_results.json нет заключения для этого участника.',
     aiBest: 'Лучшая подсказка по оценке модели', aiBestMark: 'ИИ: лучшее условие', aiChanges: 'Значимые изменения к Baseline',
     aiBestMarkSoft: 'ИИ: лучшая из двух подсказок',
+    pageTitle: 'Qadam — история шага', livePageTitle: 'Qadam Live — углы по камере',
+    pageDesc: 'Вспомогательный инструмент для врача: сравнение походки ребёнка с ДЦП в условиях Baseline, Verbal и VR. Данные обрабатываются только в браузере.',
+    livePageDesc: 'Измерение углов бедра и колена по камере с помощью MediaPipe. Видео обрабатывается только в браузере и никуда не отправляется.',
+    homeLabel: 'Qadam — на главную', navLabel: 'Разделы',
     aiNotImproves: 'Это лучшая из двух подсказок, но за одну сессию она не улучшила походку по сравнению с обычной ходьбой — нужен повторный замер.',
     aiDemo: 'ДЕМО-ПРИМЕР, не настоящие данные',
     aiDemoText: 'Этот файл только показывает, как выглядит заключение. Модель и p-value в нём выдуманы — не делайте по ним выводов.',
@@ -152,6 +156,10 @@
     aiModel: 'Модель', aiValidation: 'тексеру', aiNoParticipant: 'ai_results.json файлында бұл қатысушыға қорытынды жоқ.',
     aiBest: 'Модель бағасы бойынша ең жақсы нұсқау', aiBestMark: 'ЖИ: ең жақсы жағдай', aiChanges: 'Baseline-ға қатысты маңызды өзгерістер',
     aiBestMarkSoft: 'ЖИ: екі нұсқаудың ең жақсысы',
+    pageTitle: 'Qadam — қадам тарихы', livePageTitle: 'Qadam Live — камера бойынша бұрыштар',
+    pageDesc: 'Дәрігерге көмекші құрал: церебралды сал ауруы бар баланың Baseline, Verbal және VR жағдайларындағы жүрісін салыстыру. Деректер тек браузерде өңделеді.',
+    livePageDesc: 'MediaPipe көмегімен камера арқылы сан мен тізе бұрыштарын өлшеу. Бейне тек браузерде өңделеді және ешқайда жіберілмейді.',
+    homeLabel: 'Qadam — басты бетке', navLabel: 'Бөлімдер',
     aiNotImproves: 'Бұл — екі нұсқаудың ең жақсысы, бірақ бір сессияда ол жүрісті қалыпты жүріспен салыстырғанда жақсартпады — қайта өлшеу керек.',
     aiDemo: 'ДЕМО-МЫСАЛ, нақты деректер емес',
     aiDemoText: 'Бұл файл қорытындының қалай көрінетінін ғана көрсетеді. Ондағы модель мен p-value ойдан алынған — олар бойынша қорытынды жасамаңыз.',
@@ -246,6 +254,9 @@
   function apply(root = document) {
     document.documentElement.lang = lang === 'kz' ? 'kk' : 'ru';
     root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    // заголовок вкладки, описание страницы и подписи для экранного диктора
+    document.querySelectorAll('[data-i18n-content]').forEach((el) => el.setAttribute('content', t(el.dataset.i18nContent)));
+    document.querySelectorAll('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
     document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   }
 

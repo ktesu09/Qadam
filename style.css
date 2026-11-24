@@ -231,7 +231,7 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 
 /* ══════════ Экран участника ══════════ */
 .story { padding-top: 0; }
-.back { display: inline-block; font-weight: 500; margin-bottom: var(--s3); padding: var(--s1) 0; }
+.back { display: inline-flex; align-items: center; min-height: 48px; font-weight: 500; margin-bottom: var(--s3); padding: var(--s1) 0; }
 
 .p-head { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: var(--s3) var(--s4); align-items: end; }
 .p-head__title { font-size: clamp(44px, 5.6vw, 80px); line-height: .95; letter-spacing: -.025em; margin: 0 0 var(--s2); font-weight: 800; }
@@ -381,6 +381,8 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 #bg-prints .print { position: absolute; width: 20px; height: 38px; fill: var(--ink); opacity: .08; transition: opacity 1.6s ease-out; }
 #bg-prints .print.is-gone { opacity: 0; }
 @media print { #walker, #bg-prints { display: none; } }
+/* На телефоне «пешеход» и следы налезают на текст и таблицы — прячем */
+@media (max-width: 760px) { #walker, #bg-prints { display: none; } }
 
 /* ——— 04 Заключение ИИ ——— */
 .drop__ai { font-weight: 500; color: var(--grey); }
