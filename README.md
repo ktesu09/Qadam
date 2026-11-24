@@ -14,7 +14,7 @@
 | Роль | Что сделано |
 |---|---|
 | Интерфейс | сайт «История шага»: загрузка файлов, экран участника, графики, карточка для печати, два языка |
-| ИИ-модель | `ai/analyze.py`: значимые изменения, нестабильные шаги, классификатор условия, шкалы, тексты заключений |
+| ИИ-модель | `analyze.py`: значимые изменения, нестабильные шаги, классификатор условия, шкалы, тексты заключений |
 | Трекинг Qadam Live | распознавание походки по камере на MediaPipe (`live.html`, `live.js`) |
 
 ## ИИ-инструменты
@@ -23,7 +23,7 @@
   Все решения и проверку результатов делала команда.
 - **MediaPipe** (Google) — готовые модели распознавания позы, рук и лица для страницы Qadam Live
   (`@mediapipe/tasks-vision` 0.10.21, лицензия Apache 2.0).
-- **scikit-learn** (Random Forest), **SciPy**, **pandas**, **NumPy** — ИИ-часть в `ai/`. Внешние ИИ-сервисы и API не используются.
+- **scikit-learn** (Random Forest), **SciPy**, **pandas**, **NumPy** — ИИ-часть (`analyze.py`). Внешние ИИ-сервисы и API не используются.
 
 ## Приватность
 
@@ -70,7 +70,8 @@ Build Command — пусто, Output Directory — корень. Никаких 
 | `app.js` | загрузка файлов, список участников, язык, следы на фоне |
 | `live.html`, `live.js` | страница **Qadam Live**: углы бедра и колена по веб-камере или видео |
 | `mock_ai.json` | демо-пример заключения ИИ для 3 участников (`"demo": true`, числа выдуманы) |
-| `ai/` | ИИ-часть на Python: `analyze.py` делает `ai_results.json`, объяснение — `ai/EXPLAIN.md` (на сайт не загружается) |
+| `analyze.py`, `requirements.txt` | ИИ-часть на Python: делает `ai_results.json` (сайт его не запускает, он работает на компьютере) |
+| `EXPLAIN.md` | как работает ИИ-часть и какие получились метрики — простыми словами |
 
 Библиотеки подключаются с CDN: PapaParse 5.4.1 (CSV), Chart.js 4.4.1 (графики). Шрифт — Nunito (Google Fonts).
 
@@ -147,7 +148,7 @@ Build Command — пусто, Output Directory — корень. Никаких 
 | `summary_ru`, `summary_kz` | строка | текст заключения **для врача** (2–3 предложения с цифрами); если нет текста на выбранном языке, показывается другой с пометкой |
 | `parent_summary_ru`, `parent_summary_kz` | строка | текст **для родителей**: 2–3 простых предложения без терминов и p-value. Показывается в блоке 04, когда выбран вид «Для родителей» |
 
-Скрипт `ai/analyze.py` добавляет и служебные поля, которые сайт пока не показывает: `model.f1_macro`, `model.chance_accuracy`, `model.permutation_p`, `model.confusion_matrix`, `model.top_features`, `model.comparison`; у участника — `unstable_counts`, `axis_detail` (из чего сложились шкалы), `condition_scores`, `model_accuracy_child`, у изменений — `p_raw`, `direction`, `mean_baseline`, `mean_condition`.
+Скрипт `analyze.py` добавляет и служебные поля, которые сайт пока не показывает: `model.f1_macro`, `model.chance_accuracy`, `model.permutation_p`, `model.confusion_matrix`, `model.top_features`, `model.comparison`; у участника — `unstable_counts`, `axis_detail` (из чего сложились шкалы), `condition_scores`, `model_accuracy_child`, у изменений — `p_raw`, `direction`, `mean_baseline`, `mean_condition`.
 
 ### Шкалы и «возможная компенсация»
 
@@ -168,19 +169,19 @@ Build Command — пусто, Output Directory — корень. Никаких 
 
 Ранее загруженное заключение при ошибке не стирается.
 
-## ИИ-часть (`ai/`)
+## ИИ-часть (`analyze.py`)
 
 Скрипт читает CSV из `data/` и создаёт `ai_results.json` для всех 29 участников. Нужен Python 3.9+.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r ai/requirements.txt
-.venv/bin/python ai/analyze.py
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python analyze.py
 ```
 
 Около 10 минут (из них ~8 — перестановочный тест; `--perm 0` его пропускает). Внешние API не используются,
 данные никуда не отправляются. `ai_results.json` — производная от данных организаторов, **публиковать нельзя**
-(он в `.gitignore`). Что делает каждый шаг и какие получились метрики — в [`ai/EXPLAIN.md`](ai/EXPLAIN.md).
+(он в `.gitignore`). Что делает каждый шаг и какие получились метрики — в [`EXPLAIN.md`](EXPLAIN.md).
 
 ## Данные
 
