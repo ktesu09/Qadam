@@ -591,8 +591,57 @@ def classifier(disc, kin, n_perm):
                     "незнакомого ребёнка. Циклы одного ребёнка никогда не попадают одновременно в обучение "
                     "и в проверку."),
     }
+    model["extra"] = extra_analysis(F, feat_cols, models["main"][1])
     print(f"  классификатор: {time.time() - t0:.0f} с")
     return model, per_subj.to_dict()
+
+
+# ——— 4б. Дополнительный анализ (добавлен ПОСЛЕ основного; главная модель и её метрики не меняются) ———
+WINDOW = 5   # шагов в окне для задачи «б»
+
+
+def score(name, y, pred, labels):
+    """accuracy, F1 (macro) и случайный уровень: доля самого частого класса (accuracy «всегда отвечать одно и то же»)
+    и 1/число классов для F1 (угадывание с долями классов)."""
+    share = pd.Series(y).value_counts(normalize=True)
+    r = {"name": name, "n": int(len(y)), "classes": labels,
+         "accuracy": round(accuracy_score(y, pred), 3),
+         "f1_macro": round(f1_score(y, pred, average="macro"), 3),
+         "chance_accuracy": round(float(share.max()), 3),
+         "chance_f1": round(1 / len(labels), 3),
+         "confusion_matrix": confusion_matrix(y, pred, labels=labels).tolist()}
+    print(f"  {name}: accuracy {r['accuracy']}, F1 {r['f1_macro']}, "
+          f"случайно {r['chance_accuracy']} / F1 {r['chance_f1']} (n={r['n']})")
+    return r
+
+
+def extra_analysis(F, feat_cols, main_model):
+    """Та же модель (Random Forest + нормировка внутри ребёнка), та же проверка Leave-One-Subject-Out."""
+    out = {"note_ru": "Дополнительный анализ, добавлен после основного. Главная модель и её метрики не менялись.",
+           "note_kz": "Қосымша талдау, негізгі талдаудан кейін қосылды. Негізгі модель мен оның көрсеткіштері өзгерген жоқ."}
+    subj_codes = pd.factorize(F["subject"])[0]
+    X = np.column_stack([F[feat_cols].to_numpy(dtype=float), subj_codes])
+    groups = F["subject"].to_numpy()
+
+    # а) Baseline против подсказки (Verbal + VR вместе)
+    yb = np.where(F["condition"].to_numpy() == "Baseline", "Baseline", "Feedback")
+    out["binary"] = score("а) Baseline против подсказки (Verbal+VR), один шаг",
+                          yb, run_cv(main_model, X, yb, groups), ["Baseline", "Feedback"])
+
+    # б) медиана 5 подряд идущих шагов (окна не пересекаются, остаток < 5 шагов отбрасывается)
+    rows = []
+    for (s, c), g in F.groupby(["subject", "condition"], sort=False):
+        g = g.sort_values("cycle")
+        for i in range(len(g) // WINDOW):
+            w = g.iloc[i * WINDOW:(i + 1) * WINDOW]
+            rows.append({"subject": s, "condition": c, **w[feat_cols].median(skipna=True).to_dict()})
+    W = pd.DataFrame(rows)
+    Xw = np.column_stack([W[feat_cols].to_numpy(dtype=float), pd.factorize(W["subject"])[0]])
+    yw, gw = W["condition"].to_numpy(), W["subject"].to_numpy()
+    out["window5"] = score(f"б) медиана {WINDOW} подряд идущих шагов, 3 условия",
+                           yw, run_cv(main_model, Xw, yw, gw), CONDITIONS)
+    out["window5"]["window"] = WINDOW
+    return out
 
 
 # ——— Сборка ———
@@ -663,6 +712,10 @@ def main():
     print(f"  участников: {len(participants)}; лучшее условие: {bests}; нестабильных шагов: {n_un}")
     print(f"  модель: accuracy {model['value']}, F1 {model['f1_macro']}, случайно {model['chance_accuracy']}, "
           f"перестановочный p {model['permutation_p']}")
+    for k in ("binary", "window5"):
+        e = model["extra"][k]
+        print(f"  доп. {e['name']}: accuracy {e['accuracy']}, F1 {e['f1_macro']}, "
+              f"случайно {e['chance_accuracy']} / F1 {e['chance_f1']}")
 
 
 if __name__ == "__main__":

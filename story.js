@@ -124,7 +124,7 @@
     const rows = [[t('cardParam'), t('csvUnit'), ...CONDITIONS, ...fb.map((c) => `${c}: ${t('csvChange')}`)]];
     rows.push([t('cardCycles'), '', ...CONDITIONS.map((c) => {
       const r = K.store.discrete[c] && K.store.discrete[c].get(id);
-      return r ? String(r.length) : '';
+      return r ? String(K.validCycles(id, c)) : '';
     }), ...fb.map(() => '')]);
     for (const p of PARAMS) {
       const s = Object.fromEntries(CONDITIONS.map((c) => {
@@ -157,7 +157,7 @@
     for (const cond of CONDITIONS) {
       const rows = K.store.discrete[cond] && K.store.discrete[cond].get(id);
       const kin = K.store.kinematics[cond] && K.store.kinematics[cond].get(id);
-      const n = rows ? rows.length : kin ? kin.length : 0;
+      const n = rows ? K.validCycles(id, cond) : kin ? kin.length : 0;  // учтённые: без NaN в GPS/GVS
       const page = el('article', { class: `spread spread--${cond.toLowerCase()}` },
         el('header', { class: 'spread__head' },
           el('span', { class: 'spread__roman', text: ROMAN[cond], 'aria-hidden': 'true' }),
@@ -299,7 +299,13 @@
 
   // Общие метрики модели из ai/analyze.py (Leave-One-Subject-Out по 29 детям).
   // Данных отдельных детей здесь нет — поэтому карточка видна всегда, даже без ai_results.json.
-  const MODEL_CARD = { accuracy: 0.556, f1: 0.551, chance: 0.333, permutation_p: 0.0099, cycles: 2606 };
+  const MODEL_CARD = { accuracy: 0.556, f1: 0.551, chance: 0.333, permutation_p: 0.0099, cycles: 2606,
+    // Дополнительный анализ (добавлен после основного): та же модель и та же проверка Leave-One-Subject-Out.
+    // chance — доля самого частого класса (accuracy), chanceF1 — 1 / число классов.
+    extra: {
+      binary: { accuracy: 0.847, f1: 0.821, chance: 0.668, chanceF1: 0.5 },
+      window5: { accuracy: 0.598, f1: 0.596, chance: 0.335, chanceF1: 0.333, n: 520 },
+    } };
 
   function modelCard() {
     const m = MODEL_CARD;
@@ -311,7 +317,24 @@
       el('p', { text: t('mcOffline') }),
       el('p', { text: t('mcValidation').replace('{c}', new Intl.NumberFormat('ru-RU').format(m.cycles)) }),
       el('dl', { class: 'mcard__nums' }, num(t('mcAcc'), m.accuracy), num(t('mcF1'), m.f1), num(t('mcChance'), m.chance)),
-      el('p', { class: 'mcard__note', text: t('mcNote').replace('{p}', p) }));
+      el('p', { class: 'mcard__note', text: t('mcNote').replace('{p}', p) }),
+      extraCard(m.extra));
+  }
+
+  function extraCard(x) {
+    if (!x) return null;
+    const num = (label, v) => el('div', { class: 'mcard__num' }, el('dt', { text: label }), el('dd', { text: fmt(v, 2) }));
+    const task = (title, text, r) => el('div', { class: 'mcard__task' },
+      el('h5', { text: title }),
+      el('p', { text }),
+      el('dl', { class: 'mcard__nums mcard__nums--small' },
+        num(t('mcAcc'), r.accuracy), num('F1', r.f1),
+        num(t('mcChanceAcc'), r.chance), num(t('mcChanceF1'), r.chanceF1)));
+    return el('div', { class: 'mcard__extra' },
+      el('h4', { text: t('mcExtraTitle') }),
+      el('p', { class: 'mcard__note', text: t('mcExtraNote') }),
+      task(t('mcBinTitle'), t('mcBinText'), x.binary),
+      task(t('mcWinTitle'), t('mcWinText').replace('{n}', new Intl.NumberFormat('ru-RU').format(x.window5.n)), x.window5));
   }
 
   // Демо-файл (mock_ai.json, "demo": true) — крупная пометка, чтобы выдуманные числа не приняли за настоящие
@@ -570,7 +593,7 @@
     const tbody = el('tbody', {},
       el('tr', { class: 'pc-cycles' }, el('th', { text: t('cardCycles') }), CONDITIONS.map((c) => {
         const r = K.store.discrete[c] && K.store.discrete[c].get(id);
-        return el('td', { text: r ? String(r.length) : '—' });
+        return el('td', { text: r ? String(K.validCycles(id, c)) : '—' });
       })),
       PARAMS.map((p) => el('tr', {}, el('th', { text: t(`p_${p.key}`) }), CONDITIONS.map((c) => cell(p, id, c)))));
 

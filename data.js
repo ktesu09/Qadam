@@ -105,11 +105,19 @@
         for (const [id, rows] of bySubject) {
           if (!map.has(id)) map.set(id, { id, side: rows[0].side, weight: rows[0].weight, height: rows[0].height, cycles: {} });
           const s = map.get(id);
-          if (kind === 'discrete' || s.cycles[cond] === undefined) s.cycles[cond] = rows.length;
+          if (kind === 'discrete' || s.cycles[cond] === undefined) s.cycles[cond] = kind === 'discrete' ? validCycles(id, cond) : rows.length;
         }
       }
     }
     return [...map.values()].sort((a, b) => subjectNumber(a.id) - subjectNumber(b.id) || a.id.localeCompare(b.id));
+  }
+
+  // Учтённые циклы: без шагов, где в GPS или любом GVS пропуск (NaN / пустая ячейка)
+  const CORE = ['GPS_a', 'GVS_aSagP', 'GVS_aSagH', 'GVS_aSagK', 'GVS_aSagA'];
+  function validCycles(subject, cond) {
+    const rows = store.discrete[cond] && store.discrete[cond].get(subject);
+    if (!rows) return null;
+    return rows.filter((r) => CORE.every((k) => r.values[k] !== null && Number.isFinite(r.values[k]))).length;
   }
 
   function stats(values) {
@@ -150,6 +158,6 @@
 
   window.Kadam = Object.assign(window.Kadam || {}, {
     CONDITIONS, SIGNALS, PARAMS, POINTS, store,
-    num, parseFile, subjects, paramStats, meanCurve, change, stats,
+    num, parseFile, subjects, paramStats, validCycles, meanCurve, change, stats,
   });
 })();

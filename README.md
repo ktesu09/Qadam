@@ -46,7 +46,7 @@ python3 -m http.server 8000
 1. шесть CSV-файлов датасета: `Discrete_Parameters_{Baseline,Verbal,VR}.csv` и `Kinematics_Kinetics_{Baseline,Verbal,VR}.csv`;
 2. по желанию — `ai_results.json` с заключением модели (для проверки формата подойдёт `mock_ai.json` — это **демо-пример с выдуманными числами**, на сайте он помечен крупной надписью «ДЕМО-ПРИМЕР»).
 
-Без `ai_results.json` в блоке «04 Заключение ИИ» всё равно видна **карточка модели**: метод, проверка Leave-One-Subject-Out, accuracy, F1 и случайный уровень. Это общие метрики по всем детям, данных отдельных детей в ней нет.
+Без `ai_results.json` в блоке «04 Заключение ИИ» всё равно видна **карточка модели**: метод, проверка Leave-One-Subject-Out, accuracy, F1 и случайный уровень. Ниже — дополнительный анализ, добавлен после основного (Baseline против подсказки; медиана 5 шагов подряд). Это общие метрики по всем детям, данных отдельных детей в ней нет.
 
 Условие определяется по названию файла (`Baseline`, `Verbal`, `VR`), тип файла — по столбцам.
 Формат CSV: разделитель `;`, десятичный разделитель `,`, пропуски — `NaN` или пустая ячейка.
@@ -148,7 +148,7 @@ Build Command — пусто, Output Directory — корень. Никаких 
 | `summary_ru`, `summary_kz` | строка | текст заключения **для врача** (2–3 предложения с цифрами); если нет текста на выбранном языке, показывается другой с пометкой |
 | `parent_summary_ru`, `parent_summary_kz` | строка | текст **для родителей**: 2–3 простых предложения без терминов и p-value. Показывается в блоке 04, когда выбран вид «Для родителей» |
 
-Скрипт `analyze.py` добавляет и служебные поля, которые сайт пока не показывает: `model.f1_macro`, `model.chance_accuracy`, `model.permutation_p`, `model.confusion_matrix`, `model.top_features`, `model.comparison`; у участника — `unstable_counts`, `axis_detail` (из чего сложились шкалы), `condition_scores`, `model_accuracy_child`, у изменений — `p_raw`, `direction`, `mean_baseline`, `mean_condition`.
+Скрипт `analyze.py` добавляет и служебные поля, которые сайт пока не показывает: `model.f1_macro`, `model.chance_accuracy`, `model.permutation_p`, `model.confusion_matrix`, `model.top_features`, `model.comparison`, `model.extra` (дополнительный анализ, добавлен после основного: Baseline против подсказки и медиана 5 шагов — на сайте в карточке модели); у участника — `unstable_counts`, `axis_detail` (из чего сложились шкалы), `condition_scores`, `model_accuracy_child`, у изменений — `p_raw`, `direction`, `mean_baseline`, `mean_condition`.
 
 ### Шкалы и «возможная компенсация»
 

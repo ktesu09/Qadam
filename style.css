@@ -418,6 +418,12 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .mcard__num dt { color: var(--grey); font-size: .9rem; }
 .mcard__num dd { margin: 0; font-size: 2.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .mcard__note { color: var(--grey); font-size: .9rem; }
+.mcard__extra { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--rule); }
+.mcard__extra h4 { font-size: 1rem; font-weight: 800; margin: 0 0 var(--s1); }
+.mcard__task { margin-top: var(--s3); }
+.mcard__task h5 { font-size: 1rem; font-weight: 800; margin: 0 0 var(--s1); }
+.mcard__nums--small { margin: var(--s2) 0 0; }
+.mcard__nums--small .mcard__num dd { font-size: 1.6rem; }
 .spread__ai { margin: var(--s1) 0 0; font-weight: 600; font-size: .9rem; }
 .spread__ai::before { content: ""; display: inline-block; width: 12px; height: 12px; background: var(--accent); border-radius: 2px; margin-right: var(--s1); vertical-align: -1px; }
 .spread__unstable { margin: 4px 0 0; color: var(--grey); font-size: .85rem; }
