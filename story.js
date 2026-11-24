@@ -187,12 +187,15 @@
         el('span', { class: 'axis__line', 'aria-hidden': 'true' }),
         el('span', { class: 'axis__base', 'aria-hidden': 'true' }));
       const said = [];
+      // если отметки почти совпадают — разводим их чуть вверх/вниз, чтобы одна не закрывала другую
+      const vals = FEEDBACK.map((c) => scoreOf(obj, c));
+      const close = vals.every((v) => v !== null) && Math.abs(vals[0] - vals[1]) < 4;
       for (const c of FEEDBACK) {
         const v = scoreOf(obj, c);
         if (v === null) continue;
         said.push(`${c} ${fmt(v, 0)}`);
         track.append(
-          el('span', { class: `axis__mark axis__mark--${c.toLowerCase()}`, style: `left:${v}%`, 'aria-hidden': 'true' }),
+          el('span', { class: `axis__mark axis__mark--${c.toLowerCase()}${close ? ' is-split' : ''}`, style: `left:${v}%`, 'aria-hidden': 'true' }),
           // у краёв шкалы подпись прижимаем внутрь, чтобы не вылезала за экран
           el('span', { class: `axis__label axis__label--${c.toLowerCase()}`, 'aria-hidden': 'true',
             style: `left:${v}%;transform:translateX(${v < 12 ? '-12px' : v > 88 ? 'calc(-100% + 12px)' : '-50%'})` },
