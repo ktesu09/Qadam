@@ -89,6 +89,8 @@ Build Command — пусто, Output Directory — корень. Никаких 
       "unstable_cycles": [
         { "condition": "Verbal", "cycle": 7, "reason": "Резкий рост отклонения в тазу" }
       ],
+      "efficiency_score": { "Verbal": 30, "VR": 60 },
+      "stability_score": { "Verbal": 45, "VR": 52 },
       "summary_ru": "Текст для врача на русском.",
       "summary_kz": "Дәрігерге арналған мәтін.",
       "parent_summary_ru": "Простой текст для родителей, без терминов и p-value.",
@@ -115,13 +117,21 @@ Build Command — пусто, Output Directory — корень. Никаких 
 | `…change_abs`, `…unit` | число, строка | изменение в единицах (`°`, `% GC`); показывается, если нет `change_pct` |
 | `…p_value` | число | p-value; меньше 0,001 показывается как «p < 0,001» |
 | `unstable_cycles[]` | список | список нестабильных шагов и их число на развороте |
+| `efficiency_score` | `{"Verbal": число, "VR": число}` 0–100 | шкала «Эффективность» в разделе 05. 50 = как Baseline. `50 + 50 × (значимых улучшений − значимых ухудшений) / 5` по GPS и 4 GVS |
+| `stability_score` | `{"Verbal": число, "VR": число}` 0–100 | шкала «Стабильность». 50 = как Baseline. `50 − 25 × cv − 25 × u`, где cv = log2(средний коэффициент вариации GPS/GVS условия / Baseline), u = (доля нестабильных шагов − доля в Baseline) / 0,2; оба обрезаны до [−1; 1] |
 | `…condition` | строка | условие |
 | `…cycle` | число | номер цикла **с 1**, в порядке строк CSV для этого участника и условия |
 | `…reason`, `…reason_kz` | строка | почему шаг нестабильный (на казахском показывается `reason_kz`, если есть) |
 | `summary_ru`, `summary_kz` | строка | текст заключения **для врача** (2–3 предложения с цифрами); если нет текста на выбранном языке, показывается другой с пометкой |
 | `parent_summary_ru`, `parent_summary_kz` | строка | текст **для родителей**: 2–3 простых предложения без терминов и p-value. Пока не показывается — ждёт переключателя «Для врача / Для родителей» |
 
-Скрипт `ai/analyze.py` добавляет и служебные поля, которые сайт пока не показывает: `model.f1_macro`, `model.chance_accuracy`, `model.permutation_p`, `model.confusion_matrix`, `model.top_features`, `model.comparison`; у участника — `unstable_counts`, `condition_scores`, `model_accuracy_child`, у изменений — `p_raw`, `direction`, `mean_baseline`, `mean_condition`.
+Скрипт `ai/analyze.py` добавляет и служебные поля, которые сайт пока не показывает: `model.f1_macro`, `model.chance_accuracy`, `model.permutation_p`, `model.confusion_matrix`, `model.top_features`, `model.comparison`; у участника — `unstable_counts`, `axis_detail` (из чего сложились шкалы), `condition_scores`, `model_accuracy_child`, у изменений — `p_raw`, `direction`, `mean_baseline`, `mean_condition`.
+
+### Шкалы и «возможная компенсация»
+
+В разделе 05 на каждой шкале две отметки (Verbal и VR) и линия Baseline посередине (50).
+Если у условия эффективность **выше 50**, а стабильность **ниже 50**, показывается предупреждение
+«Возможная компенсация: шаг изменился, но стал менее стабильным. Проверьте». Нет полей — вместо шкал короткая подпись.
 
 ### Цвет изменений
 

@@ -164,15 +164,64 @@
     return wrap;
   }
 
-  /* ——— 4. Оси «Эффективность» и «Стабильность»: заглушка ——— */
-  function axes() {
-    const axis = (name) => el('div', { class: 'axis' },
-      el('p', { class: 'axis__name', text: name }),
-      el('div', { class: 'axis__track', 'aria-hidden': 'true' }, el('span'), el('span'), el('span'), el('span'), el('span')),
-      el('p', { class: 'axis__ends' }, el('span', { text: t('low') }), el('span', { text: t('high') })));
-    return el('section', { class: 'block placeholder' },
+  /* ——— 5. Шкалы «Эффективность» и «Стабильность» (0–100, 50 = как Baseline) из ai_results.json ——— */
+  const FEEDBACK = ['Verbal', 'VR'];
+  function scoreOf(obj, cond) {
+    const v = obj && typeof obj === 'object' ? obj[cond] : null;
+    return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : null;
+  }
+
+  function axes(id) {
+    const part = aiFor(id);
+    const eff = part && part.efficiency_score, stab = part && part.stability_score;
+    const has = FEEDBACK.some((c) => scoreOf(eff, c) !== null || scoreOf(stab, c) !== null);
+    if (!has) {
+      return el('section', { class: 'block axes-block' },
+        secHead('05', t('axesTitle'), null),
+        el('p', { class: 'placeholder__text', text: t(K.store.ai ? 'axesNoData' : 'axesEmpty') }));
+    }
+
+    // Шкала: линия 0–100, Baseline посередине; Verbal — подпись сверху, VR — снизу (не налезают друг на друга)
+    const axis = (name, obj) => {
+      const track = el('div', { class: 'axis__track' },
+        el('span', { class: 'axis__line', 'aria-hidden': 'true' }),
+        el('span', { class: 'axis__base', 'aria-hidden': 'true' }));
+      const said = [];
+      for (const c of FEEDBACK) {
+        const v = scoreOf(obj, c);
+        if (v === null) continue;
+        said.push(`${c} ${fmt(v, 0)}`);
+        track.append(
+          el('span', { class: `axis__mark axis__mark--${c.toLowerCase()}`, style: `left:${v}%`, 'aria-hidden': 'true' }),
+          // у краёв шкалы подпись прижимаем внутрь, чтобы не вылезала за экран
+          el('span', { class: `axis__label axis__label--${c.toLowerCase()}`, 'aria-hidden': 'true',
+            style: `left:${v}%;transform:translateX(${v < 12 ? '-12px' : v > 88 ? 'calc(-100% + 12px)' : '-50%'})` },
+            `${c} `, el('b', { text: fmt(v, 0) })));
+      }
+      return el('div', { class: 'axis', role: 'img', 'aria-label': `${name}: ${said.join(', ')}; Baseline 50` },
+        el('p', { class: 'axis__name', text: name }),
+        track,
+        el('p', { class: 'axis__ends', 'aria-hidden': 'true' },
+          el('span', { text: `0 · ${t('axisLow')}` }),
+          el('span', { class: 'axis__ends-base', text: 'Baseline 50' }),
+          el('span', { text: `${t('axisHigh')} · 100` })));
+    };
+
+    const sec = el('section', { class: 'block axes-block' },
       secHead('05', t('axesTitle'), t('axesNote')),
-      el('div', { class: 'axes' }, axis(t('axisEff')), axis(t('axisStab'))));
+      el('div', { class: 'axes' }, axis(t('axisEff'), eff), axis(t('axisStab'), stab)));
+
+    // Эффективность выше 50, а стабильность ниже 50 — возможная компенсация (одно предупреждение на все такие условия)
+    const comp = FEEDBACK.filter((c) => {
+      const e = scoreOf(eff, c), s = scoreOf(stab, c);
+      return e !== null && s !== null && e > 50 && s < 50;
+    });
+    if (comp.length) {
+      sec.append(el('p', { class: 'axes__warn', role: 'note' },
+        el('b', { text: `${comp.join(', ')}. ` }), t('axesWarn')));
+    }
+    sec.append(el('p', { class: 'axes__explain', text: t('axesExplain') }));
+    return sec;
   }
 
   /* ——— 4. Заключение ИИ из ai_results.json. Нет поля — нет блока. ——— */
@@ -505,7 +554,7 @@
       el('section', { class: 'block block--story' }, spreads(id)),
       aiSlot(id),
       // технические разделы: в виде «для родителей» скрыты
-      ...[axes(), dotPlots(id), curves(id)].map((s) => { s.classList.add('for-doctor'); return s; }),
+      ...[axes(id), dotPlots(id), curves(id)].map((s) => { s.classList.add('for-doctor'); return s; }),
       printCard(subject));
     // графики создаём после вставки в документ, чтобы знать размеры
     for (const c of charts) c.chart = new Chart(c.canvas, c.config);

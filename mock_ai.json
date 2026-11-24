@@ -8,6 +8,8 @@
   "participants": {
     "s61520_19": {
       "best_condition": "VR",
+      "efficiency_score": { "Verbal": 10, "VR": 40 },
+      "stability_score": { "Verbal": 28, "VR": 58 },
       "significant_changes": [
         { "parameter": "GVS_aSagK", "condition": "VR", "change_pct": -18.2, "p_value": 0.004 },
         { "parameter": "GVS_aSagP", "condition": "Verbal", "change_pct": 80.8, "p_value": 0.001 },
@@ -26,6 +28,8 @@
     },
     "s61520_12": {
       "best_condition": "Baseline",
+      "efficiency_score": { "Verbal": 50, "VR": 20 },
+      "stability_score": { "Verbal": 31, "VR": 10 },
       "significant_changes": [
         { "parameter": "GPS_a", "condition": "VR", "change_pct": 33.3, "p_value": 0.001 },
         { "parameter": "GVS_aSagP", "condition": "VR", "change_pct": 144.1, "p_value": 0.0005 }
