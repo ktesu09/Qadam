@@ -288,9 +288,10 @@
   function aiSlot(id) {
     if (!K.store.ai) {
       const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), null));
-      if (audience !== 'parents') sec.append(modelCard());
+      // Сначала объяснение, почему заключения нет, сразу под ним — общая карточка модели (только для врача)
       const hint = el('p', { class: 'placeholder__text ai__hint', text: t('aiEmpty') });
       sec.append(audience === 'parents' ? el('div', { class: 'with-mascot' }, mascot(), hint) : hint);
+      if (audience !== 'parents') sec.append(modelCard());
       return sec;
     }
     const part = aiFor(id);
