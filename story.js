@@ -278,11 +278,19 @@
     return el('div', { class: 'ai__demo', role: 'note' }, el('b', { text: t('aiDemo') }), el('span', { text: t('aiDemoText') }));
   }
 
+  // Маскот Qadam — только для родителей (и на экране загрузки, он в index.html)
+  function mascot() {
+    const m = svg('svg', { class: 'mascot mascot--walk mascot--parents', viewBox: '0 0 32 60', 'aria-hidden': 'true' });
+    m.append(svg('use', { href: '#mascot' }));
+    return m;
+  }
+
   function aiSlot(id) {
     if (!K.store.ai) {
       const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), null));
       if (audience !== 'parents') sec.append(modelCard());
-      sec.append(el('p', { class: 'placeholder__text ai__hint', text: t('aiEmpty') }));
+      const hint = el('p', { class: 'placeholder__text ai__hint', text: t('aiEmpty') });
+      sec.append(audience === 'parents' ? el('div', { class: 'with-mascot' }, mascot(), hint) : hint);
       return sec;
     }
     const part = aiFor(id);
@@ -319,7 +327,7 @@
 
     if (parents) {
       // Родителям — только простой текст и лучшее условие: без таблиц, p-value и номеров шагов
-      sec.append(main, el('p', { class: 'ai__note', text: t('aiNoteParent') }));
+      sec.append(el('div', { class: 'with-mascot' }, mascot(), main), el('p', { class: 'ai__note', text: t('aiNoteParent') }));
       return sec;
     }
 

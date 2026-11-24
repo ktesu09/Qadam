@@ -135,9 +135,8 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .drop.is-over { background: #F6F9E2; border-color: var(--ink); border-style: solid; }
 .drop__title { font-size: clamp(34px, 3.6vw, 48px); max-width: 14ch; }
 .drop__hint { color: var(--grey); max-width: 40ch; margin-bottom: var(--s3); }
-.drop__smile { position: absolute; right: var(--s4); top: var(--s4); width: 88px; height: 88px; transition: transform .3s ease; }
-.drop:hover .drop__smile, .drop.is-over .drop__smile { transform: rotate(-8deg) scale(1.06); }
-@media (max-width: 560px) { .drop { padding: var(--s3) var(--s2); } .drop__smile { display: none; } }
+.drop__mascot { position: absolute; right: var(--s4); top: var(--s3); width: 56px; height: 105px; }
+@media (max-width: 560px) { .drop { padding: var(--s3) var(--s2); } .drop__mascot { display: none; } }
 
 .privacy { margin: var(--s3) 0 0; padding-top: var(--s2); border-top: 1px solid var(--rule); color: var(--grey); font-size: .95rem; max-width: 52ch; }
 .privacy strong { color: var(--ink); font-weight: 600; }
@@ -152,7 +151,7 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 }
 .drop.is-compact.is-over { padding-inline: var(--s2); }
 .drop.is-compact .drop__title { font-size: 1.4rem; max-width: none; margin: 0; }
-.drop.is-compact .drop__hint, .drop.is-compact .drop__smile, .drop.is-compact .sec-no { display: none; }
+.drop.is-compact .drop__hint, .drop.is-compact .drop__mascot, .drop.is-compact .sec-no { display: none; }
 .drop.is-compact .btn { margin-left: auto; min-height: 48px; background: var(--paper); }
 .drop.is-compact .btn:hover { background: var(--paper-tint); }
 .drop.is-compact .privacy { margin: 0; padding: 0; border: 0; flex: 1 1 320px; }
@@ -531,3 +530,23 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .live__warn:not(:empty) { padding: var(--s1) var(--s2); border-left: 6px solid var(--worse); background: var(--paper-tint); }
 .live__note { color: var(--grey); margin-top: var(--s2); max-width: 70ch; }
 #cam[disabled] { opacity: .6; cursor: progress; }
+
+/* ——— Маскот Qadam: след с лицом. Только экран загрузки и вид «Для родителей» ——— */
+.mascot { display: block; flex: none; overflow: visible; }
+/* «шагает»: покачивается с носка на пятку и чуть подпрыгивает */
+.mascot--walk { transform-origin: 50% 92%; animation: mascot-step 1.6s ease-in-out infinite; }
+@keyframes mascot-step {
+  0%, 100% { transform: rotate(-7deg) translateY(0); }
+  25%      { transform: rotate(0deg) translateY(-6%); }
+  50%      { transform: rotate(7deg) translateY(0); }
+  75%      { transform: rotate(0deg) translateY(-6%); }
+}
+@media (prefers-reduced-motion: reduce) { .mascot--walk { animation: none; } }
+.with-mascot { display: flex; gap: var(--s3); align-items: flex-start; }
+.with-mascot > :last-child { flex: 1 1 auto; min-width: 0; }
+.with-mascot .mascot { width: 48px; height: 90px; }
+/* в виде для врача маскота нет никогда */
+.mascot--parents { display: none; }
+.is-parents .mascot--parents { display: block; }
+@media (max-width: 560px) { .with-mascot { gap: var(--s2); } .with-mascot .mascot { width: 36px; height: 68px; } }
+@media print { .mascot { display: none !important; } }
