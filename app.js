@@ -192,20 +192,54 @@
     }
   }
 
+  /* ——— Память файлов в этом браузере (IndexedDB) ———
+     Файлы не уходят в интернет: они лежат только в браузере этого компьютера,
+     пока не нажать «Забыть файлы». Если браузер не даёт хранить (приватный режим) — просто не запоминаем. */
+  const saved = (() => {
+    const DB = 'qadam', ST = 'files';
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(ST);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }));
+    const tx = async (mode, fn) => {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const t = db.transaction(ST, mode);
+        const out = fn(t.objectStore(ST));
+        t.oncomplete = () => res(out && 'result' in out ? out.result : undefined);
+        t.onerror = () => rej(t.error);
+      });
+    };
+    return {
+      put: (key, name, text) => tx('readwrite', (s) => s.put({ name, text }, key)).catch(() => {}),
+      all: () => tx('readonly', (s) => s.getAll()).catch(() => []),
+      clear: () => tx('readwrite', (s) => s.clear()).catch(() => {}),
+    };
+  })();
+
+  async function renderSaved() {
+    const n = (await saved.all()).length;
+    $('#saved').hidden = !n;
+  }
+
   /* ——— Приём файлов ——— */
-  async function handleFiles(fileList) {
+  async function handleFiles(fileList, fromMemory = false) {
     const files = [...fileList];
     if (!files.length) return;
     state.messages = [];
     for (const file of files) {
       if (/\.json$/i.test(file.name)) {
         try {
-          const ai = JSON.parse(await file.text());
+          const text = await file.text();
+          const ai = JSON.parse(text);
           if (!ai || typeof ai !== 'object' || !ai.participants || typeof ai.participants !== 'object') {
             state.messages.push({ ok: false, name: file.name, error: 'noParticipants' });
           } else {
             K.store.ai = ai;
-            state.messages.push({ ok: true, key: 'aiLoaded' });
+            if (!fromMemory) { state.messages.push({ ok: true, key: 'aiLoaded' }); await saved.put('ai', file.name, text); }
           }
         } catch (e) {
           state.messages.push({ ok: false, name: file.name, error: 'badJson' });
@@ -214,7 +248,10 @@
       }
       const res = await K.parseFile(file);
       if (!res.ok) state.messages.push(res);
+      else if (!fromMemory) await saved.put(`${res.kind}:${res.cond}`, file.name, await file.text());
     }
+    if (fromMemory) state.messages.push({ ok: true, key: 'restored' });
+    renderSaved();
     renderLedger();
     renderIndex();
     if (state.subject && !$('#screen-story').hidden) openStory(state.subject, true);
@@ -272,11 +309,22 @@
   });
   window.addEventListener('resize', () => { clearTimeout(drawTrail.t); drawTrail.t = setTimeout(drawTrail, 150); });
 
+  $('#forget').addEventListener('click', async () => {
+    await saved.clear();
+    window.location.reload();
+  });
+
   K.applyI18n();
   drawTrail();
   setupWalker();
   setupDrop();
   renderLedger();
+
+  // Открываем файлы, сохранённые в этом браузере в прошлый раз
+  saved.all().then((recs) => {
+    if (!recs.length) return;
+    handleFiles(recs.map((r) => new File([r.text], r.name)), true);
+  });
 
   // для отладки и проверки в консоли
   K.ui = { handleFiles, openStory, state };

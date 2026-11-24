@@ -73,6 +73,12 @@
         <p class="privacy"><strong data-i18n="privacyLead"></strong> <span data-i18n="privacy"></span></p>
       </div>
 
+      <!-- Видно, только когда файлы запомнены в этом браузере -->
+      <div class="saved" id="saved" hidden>
+        <p data-i18n="savedNote"></p>
+        <button type="button" class="btn" id="forget" data-i18n="forget"></button>
+      </div>
+
       <div class="ledger" aria-labelledby="ledger-title">
         <h2 class="ledger__title" id="ledger-title" data-i18n="filesTitle"></h2>
         <table class="ledger__table">

@@ -158,6 +158,11 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .drop.is-compact .privacy { margin: 0; padding: 0; border: 0; flex: 1 1 320px; }
 
 /* Журнал загрузки: 2 вида файлов × 3 условия */
+/* Файлы запомнены в браузере: тонкая строка с кнопкой «Забыть файлы» */
+.saved { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); padding: var(--s2) 0; border-bottom: 1px solid var(--rule); }
+.saved[hidden] { display: none; }
+.saved p { flex: 1 1 320px; margin: 0; color: var(--grey); font-size: .95rem; max-width: 64ch; }
+.saved .btn { min-height: 48px; }
 .ledger { padding-top: var(--s1); }
 .ledger__title { font-size: 1.5rem; margin-bottom: var(--s2); }
 .ledger__table { width: 100%; border-collapse: collapse; font-size: .95rem; }
