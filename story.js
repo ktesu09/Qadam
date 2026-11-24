@@ -263,10 +263,11 @@
   function modelCard() {
     const m = MODEL_CARD;
     const num = (label, v) => el('div', { class: 'mcard__num' }, el('dt', { text: label }), el('dd', { text: fmt(v, 2) }));
-    const p = m.permutation_p < 0.001 ? 'p < 0,001' : `p = ${fmt(m.permutation_p, 3)}`;
+    const p = m.permutation_p < 0.001 ? 'p < 0,001' : `p ≈ ${fmt(m.permutation_p, 2)}`;
     return el('div', { class: 'mcard' },
       el('h3', { text: t('mcTitle') }),
       el('p', { text: t('mcMethod') }),
+      el('p', { text: t('mcOffline') }),
       el('p', { text: t('mcValidation').replace('{c}', new Intl.NumberFormat('ru-RU').format(m.cycles)) }),
       el('dl', { class: 'mcard__nums' }, num(t('mcAcc'), m.accuracy), num(t('mcF1'), m.f1), num(t('mcChance'), m.chance)),
       el('p', { class: 'mcard__note', text: t('mcNote').replace('{p}', p) }));
@@ -288,10 +289,10 @@
   function aiSlot(id) {
     if (!K.store.ai) {
       const sec = el('section', { class: 'block ai', id: 'ai-block' }, secHead('04', t('aiTitle'), null));
-      // Сначала объяснение, почему заключения нет, сразу под ним — общая карточка модели (только для врача)
+      // Сначала объяснение, почему заключения нет, сразу под ним — общая карточка модели.
+      // Карточка видна ВСЕГДА (и врачу, и родителям): по ссылке без ai_results.json это единственное, что показывает ИИ.
       const hint = el('p', { class: 'placeholder__text ai__hint', text: t('aiEmpty') });
-      sec.append(audience === 'parents' ? el('div', { class: 'with-mascot' }, mascot(), hint) : hint);
-      if (audience !== 'parents') sec.append(modelCard());
+      sec.append(audience === 'parents' ? el('div', { class: 'with-mascot' }, mascot(), hint) : hint, modelCard());
       return sec;
     }
     const part = aiFor(id);

@@ -408,7 +408,7 @@ main { padding-top: var(--s4); padding-bottom: var(--s5); }
 .ai__note { color: var(--grey); font-size: .85rem; margin: var(--s3) 0 0; }
 .ai__best-note { flex-basis: 100%; margin: 0; color: var(--grey); max-width: 60ch; }
 .ai__hint { margin-top: var(--s3); max-width: 64ch; }
-.ai__hint + .mcard { margin-top: var(--s4); }
+.ai__hint + .mcard, .with-mascot + .mcard { margin-top: var(--s4); }
 .ai__demo { margin: 0 0 var(--s3); padding: var(--s2) var(--s3); border-left: 6px solid var(--worse); background: var(--paper-tint); }
 .ai__demo b { display: block; color: var(--worse); font-size: 1.5rem; font-weight: 800; line-height: 1.2; }
 .ai__demo span { display: block; margin-top: var(--s1); max-width: 60ch; }
